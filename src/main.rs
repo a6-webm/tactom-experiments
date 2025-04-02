@@ -20,6 +20,7 @@ mod glyphs;
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 enum Exp {
+    Calibrate,
     Distinguish,
     Alphabet,
 }
@@ -333,9 +334,20 @@ fn main() -> anyhow::Result<()> {
     let alphabets = init_alphabets();
 
     match cli.exp {
+        Exp::Calibrate => calibrate(tty, alphabets.get("distinguish").unwrap()),
         Exp::Distinguish => distinguish_exp(out_writer, tty, alphabets.get("distinguish").unwrap()),
         Exp::Alphabet => alphabet_exp(out_writer, tty, alphabets.get("alphabet_v1").unwrap()),
     }?;
 
     Ok(())
+}
+
+// TODO add calibration to your experiments
+fn calibrate(mut tty: TTYPort, a_bet: &Alphabet) -> anyhow::Result<()> {
+    loop {
+        for i in 0..12 {
+            queue_events_as_raw(a_bet.get_other_glyph(&i.to_string()), &mut tty)?;
+            sleep(Duration::from_millis(500));
+        }
+    }
 }
