@@ -1,7 +1,9 @@
-use std::{fs::File, io::Write, iter};
+use std::{io::Write, iter, thread::sleep, time::Duration};
+
+use serialport::TTYPort;
 
 const RAW_ENTER: u8 = 0xC0;
-const RAW_EXIT: u8 = 0xC1;
+const RAW_EXIT: u8 = 0xF5;
 
 /*
 Placement of motors on the palm, with the plam facing the table:
@@ -15,18 +17,18 @@ Numbers represent the index of the motor
 
 #[derive(Clone, Copy)]
 pub enum EvType {
-    Go0 = 0, // Play motor with index "GO<index>"
-    Go1,
-    Go2,
-    Go3,
-    Go4,
-    Go5,
-    Go6,
-    Go7,
-    Go8,
-    Go9,
-    Go10,
-    Go11,
+    _Go0 = 0, // Play motor with index "GO<index>"
+    _Go1,
+    _Go2,
+    _Go3,
+    _Go4,
+    _Go5,
+    _Go6,
+    _Go7,
+    _Go8,
+    _Go9,
+    _Go10,
+    _Go11,
     EndGlyph, // Denote the end of a glyph
 }
 
@@ -42,7 +44,7 @@ impl Ev {
     }
 }
 
-pub fn queue_events_as_raw(events: &[Ev], tty: &mut File) -> anyhow::Result<()> {
+pub fn queue_events_as_raw(events: &[Ev], tty: &mut TTYPort) -> anyhow::Result<()> {
     let bytes_iter = events
         .iter()
         .flat_map(|ev| iter::once(ev.ev_type).chain(ev.ms_time.to_be_bytes()));
@@ -50,6 +52,10 @@ pub fn queue_events_as_raw(events: &[Ev], tty: &mut File) -> anyhow::Result<()> 
         .chain(bytes_iter)
         .chain(iter::once(RAW_EXIT))
         .collect();
-    tty.write_all(&bytes)?;
+    for byte in bytes {
+        tty.write_all(&[byte])?;
+        tty.flush()?;
+        sleep(Duration::from_millis(1)); // TODO fix this
+    }
     Ok(())
 }

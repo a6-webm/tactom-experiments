@@ -8,7 +8,7 @@ use crate::event::{Ev, EvType::EndGlyph};
 pub struct Alphabet {
     ascii_block: Vec<Vec<Ev>>, // from ' ' to '~' inclusive
     char_map: HashMap<char, Vec<Ev>>,
-    other_map: HashMap<String, Vec<Ev>>,
+    pub other_map: HashMap<String, Vec<Ev>>,
     unknown_glyph: Vec<Ev>,
 }
 
@@ -162,35 +162,35 @@ pub fn init_alphabets() -> HashMap<String, Alphabet> {
     for i in 0..12 {
         distinguish
             .other_map
-            .insert(i.to_string(), equal_spaced_evs(&[i], 50));
+            .insert(i.to_string(), equal_spaced_evs(&[i], 100));
     }
     distinguish.add_other_glyphs(vec![
-        ("col0_up", equal_spaced_evs(&[8, 4, 0], 50)),
-        ("col1_up", equal_spaced_evs(&[9, 5, 1], 50)),
-        ("col2_up", equal_spaced_evs(&[10, 6, 2], 50)),
-        ("col3_up", equal_spaced_evs(&[11, 7, 3], 50)),
-        ("col0_down", equal_spaced_evs(&[0, 4, 8], 50)),
-        ("col1_down", equal_spaced_evs(&[1, 5, 9], 50)),
-        ("col2_down", equal_spaced_evs(&[2, 6, 10], 50)),
-        ("col3_down", equal_spaced_evs(&[3, 7, 11], 50)),
-        ("row0_right", equal_spaced_evs(&[0, 1, 2, 3], 50)),
-        ("row1_right", equal_spaced_evs(&[4, 5, 6, 7], 50)),
-        ("row2_right", equal_spaced_evs(&[8, 9, 10, 11], 50)),
-        ("row0_left", equal_spaced_evs(&[3, 2, 1, 0], 50)),
-        ("row1_left", equal_spaced_evs(&[7, 6, 5, 4], 50)),
-        ("row2_left", equal_spaced_evs(&[11, 10, 9, 8], 50)),
+        ("col0_up", equal_spaced_evs(&[8, 4, 0], 100)),
+        ("col1_up", equal_spaced_evs(&[9, 5, 1], 100)),
+        ("col2_up", equal_spaced_evs(&[10, 6, 2], 100)),
+        ("col3_up", equal_spaced_evs(&[11, 7, 3], 100)),
+        ("col0_down", equal_spaced_evs(&[0, 4, 8], 100)),
+        ("col1_down", equal_spaced_evs(&[1, 5, 9], 100)),
+        ("col2_down", equal_spaced_evs(&[2, 6, 10], 100)),
+        ("col3_down", equal_spaced_evs(&[3, 7, 11], 100)),
+        ("row0_right", equal_spaced_evs(&[0, 1, 2, 3], 100)),
+        ("row1_right", equal_spaced_evs(&[4, 5, 6, 7], 100)),
+        ("row2_right", equal_spaced_evs(&[8, 9, 10, 11], 100)),
+        ("row0_left", equal_spaced_evs(&[3, 2, 1, 0], 100)),
+        ("row1_left", equal_spaced_evs(&[7, 6, 5, 4], 100)),
+        ("row2_left", equal_spaced_evs(&[11, 10, 9, 8], 100)),
         (
             "clockwise",
-            equal_spaced_evs(&[0, 1, 2, 3, 7, 11, 10, 9, 8, 4, 0], 50),
+            equal_spaced_evs(&[0, 1, 2, 3, 7, 11, 10, 9, 8, 4, 0], 100),
         ),
         (
             "anticlockwise",
-            equal_spaced_evs(&[0, 4, 8, 9, 10, 11, 7, 3, 2, 1, 0], 50),
+            equal_spaced_evs(&[0, 4, 8, 9, 10, 11, 7, 3, 2, 1, 0], 100),
         ),
-        ("slash", equal_spaced_evs(&[3, 6, 5, 8], 50)),
-        ("rev_slash", equal_spaced_evs(&[8, 5, 6, 3], 50)),
-        ("backslash", equal_spaced_evs(&[0, 5, 6, 11], 50)),
-        ("rev_backslash", equal_spaced_evs(&[11, 6, 5, 0], 50)),
+        ("slash", equal_spaced_evs(&[3, 6, 5, 8], 100)),
+        ("rev_slash", equal_spaced_evs(&[8, 5, 6, 3], 100)),
+        ("backslash", equal_spaced_evs(&[0, 5, 6, 11], 100)),
+        ("rev_backslash", equal_spaced_evs(&[11, 6, 5, 0], 100)),
     ]);
     distinguish.add_other_glyphs(vec![
         (
@@ -228,7 +228,7 @@ pub fn init_alphabets() -> HashMap<String, Alphabet> {
     ]);
     map.insert("distinguish".to_owned(), distinguish);
 
-    let mut alphabet_v1 = Alphabet::default();
+    let alphabet_v1 = Alphabet::default();
     // TODO
     map.insert("alphabet_v1".to_owned(), alphabet_v1);
 

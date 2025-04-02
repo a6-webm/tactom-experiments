@@ -1,5 +1,5 @@
 use std::{
-    fs::{File, OpenOptions},
+    fs::File,
     io::{self, Write},
     path::{Path, PathBuf},
     thread::sleep,
@@ -13,6 +13,7 @@ use event::queue_events_as_raw;
 use glyphs::{init_alphabets, println_glyph, Alphabet};
 use rand::{random, rng, seq::SliceRandom};
 use serde::Serialize;
+use serialport::TTYPort;
 
 mod event;
 mod glyphs;
@@ -66,7 +67,7 @@ fn flush() {
 }
 
 fn distinguish_problem(
-    tty: &mut File,
+    tty: &mut TTYPort,
     a_bet: &Alphabet,
     prob: (&str, &str),
     q: usize,
@@ -120,7 +121,7 @@ fn distinguish_problem(
 
 fn distinguish_exp(
     mut out_writer: Writer<File>,
-    mut tty: File,
+    mut tty: TTYPort,
     a_bet: &Alphabet,
 ) -> anyhow::Result<()> {
     clear_term();
@@ -164,7 +165,19 @@ Example glyphs:"
             clear_term();
             match distinguish_problem(&mut tty, a_bet, prob, q, q_len, p_id) {
                 Ok(data) => {
+                    // ----- WARN dbg
+                    println!(
+                        "{}",
+                        if data.correct {
+                            "dbg: Correct!"
+                        } else {
+                            "dbg: Wrong"
+                        }
+                    );
+                    sleep(Duration::from_millis(500));
+                    // -----
                     out_writer.serialize(data)?;
+                    out_writer.flush()?;
                     break;
                 }
                 Err(e) => {
@@ -196,7 +209,7 @@ Example glyphs:"
 }
 
 fn alphabet_problem(
-    tty: &mut File,
+    tty: &mut TTYPort,
     a_bet: &Alphabet,
     prob: char,
     q: usize,
@@ -238,7 +251,7 @@ fn alphabet_problem(
 
 fn alphabet_exp(
     mut out_writer: Writer<File>,
-    mut tty: File,
+    mut tty: TTYPort,
     a_bet: &Alphabet,
 ) -> anyhow::Result<()> {
     clear_term();
@@ -313,12 +326,9 @@ fn main() -> anyhow::Result<()> {
     if Path::exists(&cli.out_path) && cli.out_path != PathBuf::from("/dev/null") {
         return Err(anyhow!("OUTPUT_FILE path already exists"));
     }
+
+    let tty = TTYPort::open(&serialport::new(cli.tty_path.to_string_lossy(), 115200))?;
     let out_writer = csv::WriterBuilder::new().from_path(cli.out_path)?;
-    let tty = OpenOptions::new()
-        .read(false)
-        .write(true)
-        .create_new(false)
-        .open(cli.tty_path)?;
 
     let alphabets = init_alphabets();
 
