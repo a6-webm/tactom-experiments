@@ -342,12 +342,17 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-// TODO add calibration to your experiments
 fn calibrate(mut tty: TTYPort, a_bet: &Alphabet) -> anyhow::Result<()> {
+    let mut i: u8 = 0;
     loop {
-        for i in 0..12 {
-            queue_events_as_raw(a_bet.get_other_glyph(&i.to_string()), &mut tty)?;
-            sleep(Duration::from_millis(500));
+        let glyph = a_bet.get_other_glyph(&i.to_string());
+        queue_events_as_raw(glyph, &mut tty)?;
+        clear_term();
+        println_glyph(glyph);
+        sleep(Duration::from_millis(500));
+        i += 1;
+        if i == 12 {
+            i = 0;
         }
     }
 }
