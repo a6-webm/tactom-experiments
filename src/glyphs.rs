@@ -228,9 +228,105 @@ pub fn init_alphabets() -> HashMap<String, Alphabet> {
     ]);
     map.insert("distinguish".to_owned(), distinguish);
 
-    let alphabet_v1 = Alphabet::default();
-    // TODO
-    map.insert("alphabet_v1".to_owned(), alphabet_v1);
+    let mut roud_graff = Alphabet::default();
+    roud_graff.ascii_block = vec![
+        roud_graff.unknown_glyph.to_owned(),      // <space>
+        roud_graff.unknown_glyph.to_owned(),      // !
+        roud_graff.unknown_glyph.to_owned(),      // "
+        roud_graff.unknown_glyph.to_owned(),      // #
+        roud_graff.unknown_glyph.to_owned(),      // $
+        roud_graff.unknown_glyph.to_owned(),      // %
+        roud_graff.unknown_glyph.to_owned(),      // &
+        roud_graff.unknown_glyph.to_owned(),      // '
+        roud_graff.unknown_glyph.to_owned(),      // (
+        roud_graff.unknown_glyph.to_owned(),      // )
+        roud_graff.unknown_glyph.to_owned(),      // *
+        roud_graff.unknown_glyph.to_owned(),      // +
+        roud_graff.unknown_glyph.to_owned(),      // ,
+        roud_graff.unknown_glyph.to_owned(),      // -
+        roud_graff.unknown_glyph.to_owned(),      // .
+        roud_graff.unknown_glyph.to_owned(),      // /
+        roud_graff.unknown_glyph.to_owned(),      // 0
+        roud_graff.unknown_glyph.to_owned(),      // 1
+        roud_graff.unknown_glyph.to_owned(),      // 2
+        roud_graff.unknown_glyph.to_owned(),      // 3
+        roud_graff.unknown_glyph.to_owned(),      // 4
+        roud_graff.unknown_glyph.to_owned(),      // 5
+        roud_graff.unknown_glyph.to_owned(),      // 6
+        roud_graff.unknown_glyph.to_owned(),      // 7
+        roud_graff.unknown_glyph.to_owned(),      // 8
+        roud_graff.unknown_glyph.to_owned(),      // 9
+        roud_graff.unknown_glyph.to_owned(),      // :
+        roud_graff.unknown_glyph.to_owned(),      // ;
+        roud_graff.unknown_glyph.to_owned(),      // <
+        roud_graff.unknown_glyph.to_owned(),      // =
+        roud_graff.unknown_glyph.to_owned(),      // >
+        roud_graff.unknown_glyph.to_owned(),      // ?
+        roud_graff.unknown_glyph.to_owned(),      // @
+        roud_graff.unknown_glyph.to_owned(),      // A
+        roud_graff.unknown_glyph.to_owned(),      // B
+        roud_graff.unknown_glyph.to_owned(),      // C
+        roud_graff.unknown_glyph.to_owned(),      // D
+        roud_graff.unknown_glyph.to_owned(),      // E
+        roud_graff.unknown_glyph.to_owned(),      // F
+        roud_graff.unknown_glyph.to_owned(),      // G
+        roud_graff.unknown_glyph.to_owned(),      // H
+        roud_graff.unknown_glyph.to_owned(),      // I
+        roud_graff.unknown_glyph.to_owned(),      // J
+        roud_graff.unknown_glyph.to_owned(),      // K
+        roud_graff.unknown_glyph.to_owned(),      // L
+        roud_graff.unknown_glyph.to_owned(),      // M
+        roud_graff.unknown_glyph.to_owned(),      // N
+        roud_graff.unknown_glyph.to_owned(),      // O
+        roud_graff.unknown_glyph.to_owned(),      // P
+        roud_graff.unknown_glyph.to_owned(),      // Q
+        roud_graff.unknown_glyph.to_owned(),      // R
+        roud_graff.unknown_glyph.to_owned(),      // S
+        roud_graff.unknown_glyph.to_owned(),      // T
+        roud_graff.unknown_glyph.to_owned(),      // U
+        roud_graff.unknown_glyph.to_owned(),      // V
+        roud_graff.unknown_glyph.to_owned(),      // W
+        roud_graff.unknown_glyph.to_owned(),      // X
+        roud_graff.unknown_glyph.to_owned(),      // Y
+        roud_graff.unknown_glyph.to_owned(),      // Z
+        roud_graff.unknown_glyph.to_owned(),      // [
+        roud_graff.unknown_glyph.to_owned(),      // \
+        roud_graff.unknown_glyph.to_owned(),      // ]
+        roud_graff.unknown_glyph.to_owned(),      // ^
+        roud_graff.unknown_glyph.to_owned(),      // _
+        roud_graff.unknown_glyph.to_owned(),      // `
+        equal_spaced_evs(&[8, 4, 1, 6, 11], 100), // a
+        equal_spaced_evs(&[0, 4, 8, 4, 5, 6, 7, 11, 10, 9, 8], 100), // b
+        equal_spaced_evs(&[3, 2, 1, 0, 4, 8, 9, 10, 11], 100), // c
+        equal_spaced_evs(&[8, 4, 0, 1, 2, 3, 7, 11, 10, 9, 8], 100), // d
+        equal_spaced_evs(&[4, 5, 6, 7, 3, 2, 1, 0, 4, 8, 9, 10, 11], 100), // e
+        equal_spaced_evs(&[3, 2, 1, 0, 4, 8], 100), // f
+        equal_spaced_evs(&[1, 0, 4, 8, 9, 10, 11, 7, 6], 100), // g
+        equal_spaced_evs(&[0, 4, 8, 4, 5, 6, 7, 11], 100), // h
+        equal_spaced_evs(&[0, 4, 8], 100),        // i
+        equal_spaced_evs(&[3, 7, 11, 10, 9, 8], 100), // j
+        equal_spaced_evs(&[3, 6, 9, 8, 4, 0, 1, 6, 11], 100), // k
+        equal_spaced_evs(&[0, 4, 8, 9, 10, 11], 100), // l
+        equal_spaced_evs(&[8, 4, 0, 1, 5, 6, 2, 3, 7, 11], 100), // m
+        equal_spaced_evs(&[8, 4, 0, 1, 5, 10, 11, 7, 3], 100), // n
+        equal_spaced_evs(&[1, 0, 4, 8, 9, 10, 11, 7, 3, 2], 100), // o
+        equal_spaced_evs(&[8, 4, 0, 1, 2, 3, 7, 6, 5, 4], 100), // p
+        equal_spaced_evs(&[3, 2, 1, 0, 4, 5, 6, 7, 3, 7, 11], 100), // q
+        equal_spaced_evs(&[8, 4, 0, 1, 2, 3, 7, 6, 5, 4, 5, 10], 100), // r
+        equal_spaced_evs(&[3, 2, 1, 0, 4, 5, 6, 7, 11, 10, 9, 8], 100), // s
+        equal_spaced_evs(&[0, 1, 2, 3, 7, 11], 100), // t
+        equal_spaced_evs(&[0, 4, 8, 9, 10, 11, 7, 3], 100), // u
+        equal_spaced_evs(&[0, 4, 9, 6, 3], 100),  // v
+        equal_spaced_evs(&[0, 4, 8, 9, 5, 6, 10, 11, 7, 3], 100), // w
+        equal_spaced_evs(&[0, 5, 10, 6, 2, 5, 8], 100), // x
+        equal_spaced_evs(&[0, 4, 5, 6, 7, 3, 7, 11, 10, 9, 6, 3], 100), // y
+        equal_spaced_evs(&[0, 1, 2, 3, 7, 6, 5, 4, 8, 9, 10, 11], 100), // z
+        roud_graff.unknown_glyph.to_owned(),      // {
+        roud_graff.unknown_glyph.to_owned(),      // |
+        roud_graff.unknown_glyph.to_owned(),      // }
+        roud_graff.unknown_glyph.to_owned(),      // ~
+    ];
+    map.insert("roud_graff".to_owned(), roud_graff);
 
     map
 }

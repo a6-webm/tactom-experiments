@@ -144,14 +144,20 @@ Example glyphs:"
     io::stdin().read_line(&mut String::new())?;
     let mut problems: Vec<(usize, (&str, &str))> = [
         ("0", "11"),
-        ("7", "4"),
-        ("3", "2"),
+        ("3", "8"),
+        ("0", "3"),
+        ("11", "3"),
+        ("0", "1"),
+        ("2", "3"),
+        ("4", "5"),
         ("10", "11"),
         ("row0_right", "row0_left"),
-        ("col2_up", "col2_down"),
+        ("col1_up", "col1_down"),
+        ("col3_up", "col3_down"),
         ("row2_right", "row2_left"),
         ("anticlockwise", "clockwise"),
         ("slash", "col3_down"),
+        ("backslash", "col3_down"),
         ("zag", "zig"),
         ("zag", "N"),
         ("anticlockwise", "N"),
@@ -266,21 +272,26 @@ Press [Enter] when you're ready to begin:"
     flush();
     io::stdin().read_line(&mut String::new())?;
 
-    for c in 'a'..='z' {
+    'learn: for c in 'a'..='z' {
         clear_term();
         println!("----- Glyph '{}' -----", c);
         println_glyph(a_bet.get_glyph(c));
         flush();
-        sleep(Duration::from_secs_f32(1.0));
+        // WARN DBG
+        // sleep(Duration::from_secs_f32(1.0));
         let mut answer = String::new();
         while answer.to_lowercase() != "n\n" {
             println!("Playing...");
+            queue_events_as_raw(a_bet.get_glyph(c), &mut tty)?;
             flush();
-            sleep(Duration::from_secs_f32(2.0));
+            // sleep(Duration::from_secs_f32(2.0));
             print!("Would you like to replay this glyph (otherwise, advance to the next letter)?[Y/n]: ");
             flush();
             answer = String::new();
             io::stdin().read_line(&mut answer)?;
+            if answer == "skip\n" {
+                break 'learn;
+            }
         }
     }
 
@@ -292,6 +303,11 @@ Press [Enter] when you're ready to begin:"
             clear_term();
             match alphabet_problem(&mut tty, a_bet, prob, q, q_len) {
                 Ok(data) => {
+                    // WARN DBG
+                    dbg!(data.c);
+                    dbg!(data.correct);
+                    sleep(Duration::from_secs_f32(0.5));
+                    // -----
                     out_writer.serialize(data)?;
                     break;
                 }
@@ -336,7 +352,7 @@ fn main() -> anyhow::Result<()> {
     match cli.exp {
         Exp::Calibrate => calibrate(tty, alphabets.get("distinguish").unwrap()),
         Exp::Distinguish => distinguish_exp(out_writer, tty, alphabets.get("distinguish").unwrap()),
-        Exp::Alphabet => alphabet_exp(out_writer, tty, alphabets.get("alphabet_v1").unwrap()),
+        Exp::Alphabet => alphabet_exp(out_writer, tty, alphabets.get("roud_graff").unwrap()),
     }?;
 
     Ok(())
