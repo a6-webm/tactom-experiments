@@ -136,6 +136,15 @@ fn equal_spaced_evs(evs: &[u8], space_ms: u16) -> Vec<Ev> {
         .collect()
 }
 
+pub fn retime_eq_spaced(glyph: &[Ev], space_ms: u16) -> Vec<Ev> {
+    glyph
+        .iter()
+        .map(|ev| ev.ev_type)
+        .enumerate()
+        .map(|(i, et)| Ev::new(i as u16 * space_ms, et))
+        .collect()
+}
+
 fn stitch_evs(glyphs: &[&[Ev]]) -> Vec<Ev> {
     let mut out = vec![];
     let mut time: u16 = 0;
@@ -155,6 +164,10 @@ fn stitch_evs(glyphs: &[&[Ev]]) -> Vec<Ev> {
     out
 }
 
+pub fn glyph_duration(glyph: &[Ev]) -> u16 {
+    glyph.last().map(|ev| ev.ms_time).unwrap_or(0)
+}
+
 pub fn init_alphabets() -> HashMap<String, Alphabet> {
     let mut map = HashMap::new();
 
@@ -162,35 +175,35 @@ pub fn init_alphabets() -> HashMap<String, Alphabet> {
     for i in 0..12 {
         distinguish
             .other_map
-            .insert(i.to_string(), equal_spaced_evs(&[i], 100));
+            .insert(i.to_string(), equal_spaced_evs(&[i], 30));
     }
     distinguish.add_other_glyphs(vec![
-        ("col0_up", equal_spaced_evs(&[8, 4, 0], 100)),
-        ("col1_up", equal_spaced_evs(&[9, 5, 1], 100)),
-        ("col2_up", equal_spaced_evs(&[10, 6, 2], 100)),
-        ("col3_up", equal_spaced_evs(&[11, 7, 3], 100)),
-        ("col0_down", equal_spaced_evs(&[0, 4, 8], 100)),
-        ("col1_down", equal_spaced_evs(&[1, 5, 9], 100)),
-        ("col2_down", equal_spaced_evs(&[2, 6, 10], 100)),
-        ("col3_down", equal_spaced_evs(&[3, 7, 11], 100)),
-        ("row0_right", equal_spaced_evs(&[0, 1, 2, 3], 100)),
-        ("row1_right", equal_spaced_evs(&[4, 5, 6, 7], 100)),
-        ("row2_right", equal_spaced_evs(&[8, 9, 10, 11], 100)),
-        ("row0_left", equal_spaced_evs(&[3, 2, 1, 0], 100)),
-        ("row1_left", equal_spaced_evs(&[7, 6, 5, 4], 100)),
-        ("row2_left", equal_spaced_evs(&[11, 10, 9, 8], 100)),
+        ("col0_up", equal_spaced_evs(&[8, 4, 0], 30)),
+        ("col1_up", equal_spaced_evs(&[9, 5, 1], 30)),
+        ("col2_up", equal_spaced_evs(&[10, 6, 2], 30)),
+        ("col3_up", equal_spaced_evs(&[11, 7, 3], 30)),
+        ("col0_down", equal_spaced_evs(&[0, 4, 8], 30)),
+        ("col1_down", equal_spaced_evs(&[1, 5, 9], 30)),
+        ("col2_down", equal_spaced_evs(&[2, 6, 10], 30)),
+        ("col3_down", equal_spaced_evs(&[3, 7, 11], 30)),
+        ("row0_right", equal_spaced_evs(&[0, 1, 2, 3], 30)),
+        ("row1_right", equal_spaced_evs(&[4, 5, 6, 7], 30)),
+        ("row2_right", equal_spaced_evs(&[8, 9, 10, 11], 30)),
+        ("row0_left", equal_spaced_evs(&[3, 2, 1, 0], 30)),
+        ("row1_left", equal_spaced_evs(&[7, 6, 5, 4], 30)),
+        ("row2_left", equal_spaced_evs(&[11, 10, 9, 8], 30)),
         (
             "clockwise",
-            equal_spaced_evs(&[0, 1, 2, 3, 7, 11, 10, 9, 8, 4, 0], 100),
+            equal_spaced_evs(&[0, 1, 2, 3, 7, 11, 10, 9, 8, 4, 0], 30),
         ),
         (
             "anticlockwise",
-            equal_spaced_evs(&[0, 4, 8, 9, 10, 11, 7, 3, 2, 1, 0], 100),
+            equal_spaced_evs(&[0, 4, 8, 9, 10, 11, 7, 3, 2, 1, 0], 30),
         ),
-        ("slash", equal_spaced_evs(&[3, 6, 5, 8], 100)),
-        ("rev_slash", equal_spaced_evs(&[8, 5, 6, 3], 100)),
-        ("backslash", equal_spaced_evs(&[0, 5, 6, 11], 100)),
-        ("rev_backslash", equal_spaced_evs(&[11, 6, 5, 0], 100)),
+        ("slash", equal_spaced_evs(&[3, 6, 5, 8], 30)),
+        ("rev_slash", equal_spaced_evs(&[8, 5, 6, 3], 30)),
+        ("backslash", equal_spaced_evs(&[0, 5, 6, 11], 30)),
+        ("rev_backslash", equal_spaced_evs(&[11, 6, 5, 0], 30)),
     ]);
     distinguish.add_other_glyphs(vec![
         (
@@ -228,7 +241,12 @@ pub fn init_alphabets() -> HashMap<String, Alphabet> {
     ]);
     map.insert("distinguish".to_owned(), distinguish);
 
-    let mut roud_graff = Alphabet::default();
+    let mut roud_graff = Alphabet::default(); // short for "Roudaut graffiti"
+    for i in 0..12 {
+        roud_graff
+            .other_map
+            .insert(i.to_string(), equal_spaced_evs(&[i], 100));
+    }
     roud_graff.ascii_block = vec![
         roud_graff.unknown_glyph.to_owned(),      // <space>
         roud_graff.unknown_glyph.to_owned(),      // !
@@ -295,32 +313,32 @@ pub fn init_alphabets() -> HashMap<String, Alphabet> {
         roud_graff.unknown_glyph.to_owned(),      // ^
         roud_graff.unknown_glyph.to_owned(),      // _
         roud_graff.unknown_glyph.to_owned(),      // `
-        equal_spaced_evs(&[8, 4, 1, 6, 11], 100), // a
-        equal_spaced_evs(&[0, 4, 8, 4, 5, 6, 7, 11, 10, 9, 8], 100), // b
-        equal_spaced_evs(&[3, 2, 1, 0, 4, 8, 9, 10, 11], 100), // c
-        equal_spaced_evs(&[8, 4, 0, 1, 2, 3, 7, 11, 10, 9, 8], 100), // d
-        equal_spaced_evs(&[4, 5, 6, 7, 3, 2, 1, 0, 4, 8, 9, 10, 11], 100), // e
-        equal_spaced_evs(&[3, 2, 1, 0, 4, 8], 100), // f
-        equal_spaced_evs(&[1, 0, 4, 8, 9, 10, 11, 7, 6], 100), // g
-        equal_spaced_evs(&[0, 4, 8, 4, 5, 6, 7, 11], 100), // h
-        equal_spaced_evs(&[0, 4, 8], 100),        // i
-        equal_spaced_evs(&[3, 7, 11, 10, 9, 8], 100), // j
-        equal_spaced_evs(&[3, 6, 9, 8, 4, 0, 1, 6, 11], 100), // k
-        equal_spaced_evs(&[0, 4, 8, 9, 10, 11], 100), // l
-        equal_spaced_evs(&[8, 4, 0, 1, 5, 6, 2, 3, 7, 11], 100), // m
-        equal_spaced_evs(&[8, 4, 0, 1, 5, 10, 11, 7, 3], 100), // n
-        equal_spaced_evs(&[1, 0, 4, 8, 9, 10, 11, 7, 3, 2], 100), // o
-        equal_spaced_evs(&[8, 4, 0, 1, 2, 3, 7, 6, 5, 4], 100), // p
-        equal_spaced_evs(&[3, 2, 1, 0, 4, 5, 6, 7, 3, 7, 11], 100), // q
-        equal_spaced_evs(&[8, 4, 0, 1, 2, 3, 7, 6, 5, 4, 5, 10], 100), // r
-        equal_spaced_evs(&[3, 2, 1, 0, 4, 5, 6, 7, 11, 10, 9, 8], 100), // s
-        equal_spaced_evs(&[0, 1, 2, 3, 7, 11], 100), // t
-        equal_spaced_evs(&[0, 4, 8, 9, 10, 11, 7, 3], 100), // u
-        equal_spaced_evs(&[0, 4, 9, 6, 3], 100),  // v
-        equal_spaced_evs(&[0, 4, 8, 9, 5, 6, 10, 11, 7, 3], 100), // w
-        equal_spaced_evs(&[0, 5, 10, 6, 2, 5, 8], 100), // x
-        equal_spaced_evs(&[0, 4, 5, 6, 7, 3, 7, 11, 10, 9, 6, 3], 100), // y
-        equal_spaced_evs(&[0, 1, 2, 3, 7, 6, 5, 4, 8, 9, 10, 11], 100), // z
+        equal_spaced_evs(&[8, 4, 1, 6, 11], 150), // a
+        equal_spaced_evs(&[0, 4, 8, 4, 5, 6, 7, 11, 10, 9, 8], 150), // b
+        equal_spaced_evs(&[3, 2, 1, 0, 4, 8, 9, 10, 11], 150), // c
+        equal_spaced_evs(&[8, 4, 0, 1, 2, 3, 7, 11, 10, 9, 8], 150), // d
+        equal_spaced_evs(&[4, 5, 6, 7, 3, 2, 1, 0, 4, 8, 9, 10, 11], 150), // e
+        equal_spaced_evs(&[3, 2, 1, 0, 4, 8], 150), // f
+        equal_spaced_evs(&[1, 0, 4, 8, 9, 10, 11, 7, 6], 150), // g
+        equal_spaced_evs(&[0, 4, 8, 4, 5, 6, 7, 11], 150), // h
+        equal_spaced_evs(&[0, 4, 8], 150),        // i
+        equal_spaced_evs(&[3, 7, 11, 10, 9, 8], 150), // j
+        equal_spaced_evs(&[3, 6, 9, 8, 4, 0, 1, 6, 11], 150), // k
+        equal_spaced_evs(&[0, 4, 8, 9, 10, 11], 150), // l
+        equal_spaced_evs(&[8, 4, 0, 1, 5, 6, 2, 3, 7, 11], 150), // m
+        equal_spaced_evs(&[8, 4, 0, 1, 5, 10, 11, 7, 3], 150), // n
+        equal_spaced_evs(&[1, 0, 4, 8, 9, 10, 11, 7, 3, 2], 150), // o
+        equal_spaced_evs(&[8, 4, 0, 1, 2, 3, 7, 6, 5, 4], 150), // p
+        equal_spaced_evs(&[3, 2, 1, 0, 4, 5, 6, 7, 3, 7, 11], 150), // q
+        equal_spaced_evs(&[8, 4, 0, 1, 2, 3, 7, 6, 5, 4, 5, 10], 150), // r
+        equal_spaced_evs(&[3, 2, 1, 0, 4, 5, 6, 7, 11, 10, 9, 8], 150), // s
+        equal_spaced_evs(&[0, 1, 2, 3, 7, 11], 150), // t
+        equal_spaced_evs(&[0, 4, 8, 9, 10, 11, 7, 3], 150), // u
+        equal_spaced_evs(&[0, 4, 9, 6, 3], 150),  // v
+        equal_spaced_evs(&[0, 4, 8, 9, 5, 6, 10, 11, 7, 3], 150), // w
+        equal_spaced_evs(&[0, 5, 10, 6, 2, 5, 8], 150), // x
+        equal_spaced_evs(&[0, 4, 5, 6, 7, 3, 7, 11, 10, 9, 6, 3], 150), // y
+        equal_spaced_evs(&[0, 1, 2, 3, 7, 6, 5, 4, 8, 9, 10, 11], 150), // z
         roud_graff.unknown_glyph.to_owned(),      // {
         roud_graff.unknown_glyph.to_owned(),      // |
         roud_graff.unknown_glyph.to_owned(),      // }
