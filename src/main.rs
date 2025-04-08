@@ -80,13 +80,23 @@ fn flush() {
     io::stdout().flush().unwrap_or(())
 }
 
-fn ask<S: AsRef<str>>(question: &str, possible_answers: &[S]) -> anyhow::Result<String> {
+async fn ask<S: AsRef<str>>(
+    question: &str,
+    possible_answers: &[S],
+    mut calibrate: Option<(&mut TTYPort, &Alphabet)>,
+) -> anyhow::Result<String> {
     let mut answer = String::new();
     loop {
         print!("{}", question);
         flush();
         stdin().read_line(&mut answer)?;
         let t_answer = answer.trim().to_lowercase();
+        if let Some((tty, a_bet)) = calibrate.as_mut() {
+            if t_answer == "calibrate" {
+                print!("Now calibrating, press [Enter] to finish:");
+                calibrate_until_enter(tty, a_bet).await?;
+            }
+        }
         for a in possible_answers {
             if a.as_ref() == t_answer {
                 return Ok(t_answer.to_owned());
@@ -130,6 +140,33 @@ async fn calibrate_until_enter(tty: &mut TTYPort, a_bet: &Alphabet) -> anyhow::R
     Ok(())
 }
 
+async fn rest(
+    rest_timer: Instant,
+    tty: &mut TTYPort,
+    a_bet: &Alphabet,
+    q_info: Option<(usize, usize)>,
+) -> anyhow::Result<Instant> {
+    if Instant::now().duration_since(rest_timer) > Duration::from_secs(5 * 60) {
+        clear_term();
+        if let Some((q, q_len)) = q_info {
+            println!("----- Question: {}/{} -----", q + 1, q_len);
+        }
+        print!(
+            "5 minutes have elapsed, feel free to take a break.
+
+When you are ready, please press [Enter] to calibrate:"
+        );
+        flush();
+        stdin().read_line(&mut String::new())?;
+        print!("\nCalibrating, press [Enter] to continue:");
+        flush();
+        calibrate_until_enter(tty, a_bet).await?;
+        Ok(Instant::now())
+    } else {
+        Ok(rest_timer)
+    }
+}
+
 async fn dropout_problem(
     tty: &mut TTYPort,
     a_bet: &Alphabet,
@@ -167,8 +204,9 @@ async fn dropout_problem(
     let start = Instant::now();
     let answer = ask(
         "Did the device play the same pattern twice?\n(type 'y','n' or '?' if you're unsure, then [Enter]): ",
-        &["y", "n", "?"]
-    )?;
+        &["y", "n", "?"],
+        Some((tty, a_bet)),
+    ).await?;
     let duration = Instant::now().duration_since(start);
     let unsure = answer == "?";
     let correct = ((answer == "y") ^ play_dropout) && !unsure;
@@ -244,7 +282,9 @@ Press [Enter] when you're ready to begin:"
         .collect();
     problems.shuffle(&mut rng());
     let q_len = problems.len();
+    let mut rest_timer = Instant::now();
     for (q, (p_id, prob)) in problems.into_iter().enumerate() {
+        rest_timer = rest(rest_timer, &mut tty, a_bet, Some((q, q_len))).await?;
         loop {
             clear_term();
             match dropout_problem(&mut tty, a_bet, prob, q, q_len, p_id).await {
@@ -258,7 +298,9 @@ Press [Enter] when you're ready to begin:"
                     let answer = ask(
                         "Would you like to retry this problem (otherwise, skip it)?[Y/n]: ",
                         &["y", "n", ""],
-                    )?;
+                        None,
+                    )
+                    .await?;
                     if answer == "n" {
                         out_writer.serialize(DropoutData {
                             id: p_id,
@@ -301,8 +343,9 @@ async fn alphabet_problem(
         .collect();
     let answer = ask(
         "What letter just played?\n(type 'a', 'b', 'c', ..., 'z' or '?' if you're unsure, then [Enter]): ",
-        &options
-    )?;
+        &options,
+        Some((tty, a_bet)),
+    ).await?;
     let duration = Instant::now().duration_since(start);
     let answer = answer.chars().nth(0).unwrap();
     let unsure = answer == '?';
@@ -341,7 +384,9 @@ Press [Enter] when you're ready to begin:"
     flush();
     calibrate_until_enter(&mut tty, a_bet).await?;
 
+    let mut rest_timer = Instant::now();
     'learn: for c in 'a'..='z' {
+        rest_timer = rest(rest_timer, &mut tty, a_bet, None).await?;
         clear_term();
         println!("----- Glyph '{}' -----", c);
         println_glyph(a_bet.get_glyph(c));
@@ -357,8 +402,9 @@ Press [Enter] when you're ready to begin:"
             play_and_wait(&mut tty, &retime_eq_spaced(a_bet.get_glyph(c), 30)).await?;
             answer = ask(
                 "Would you like to replay this glyph (otherwise, advance to the next letter)?[Y/n]: ",
-                &["y", "n", "skip", ""]
-            )?;
+                &["y", "n", "skip", ""],
+                Some((&mut tty, a_bet)),
+            ).await?;
             if answer == "skip" {
                 break 'learn;
             }
@@ -400,7 +446,9 @@ Press [Enter] when you're ready to begin:"
                     let answer = ask(
                         "Would you like to retry this problem (otherwise, skip it)?[Y/n]: ",
                         &["y", "n", ""],
-                    )?;
+                        None,
+                    )
+                    .await?;
                     if answer == "n" {
                         out_writer.serialize(AlphabetData {
                             c: '%',
@@ -438,7 +486,8 @@ async fn draw_problem(
     let answer = ask(
         "Please draw the glyph you just felt, then rate how \"pathy\" felt it was from 1 to 5.\n(type '1', '2', '3', '4' or '5', then [Enter]): ",
         &["1", "2", "3", "4", "5"],
-    )?;
+        Some((tty, a_bet)),
+    ).await?;
     let duration = Instant::now().duration_since(start);
     Ok(DrawData {
         glyph: prob.0,
@@ -479,7 +528,9 @@ Press [Enter] when you're ready to begin:"
     problems.shuffle(&mut rng());
 
     let q_len = problems.len();
+    let mut rest_timer = Instant::now();
     for (q, prob) in problems.into_iter().enumerate() {
+        rest_timer = rest(rest_timer, &mut tty, a_bet, Some((q, q_len))).await?;
         loop {
             clear_term();
             match draw_problem(&mut tty, a_bet, prob, q, q_len).await {
@@ -493,7 +544,9 @@ Press [Enter] when you're ready to begin:"
                     let answer = ask(
                         "Would you like to retry this problem (otherwise, skip it)?[Y/n]: ",
                         &["y", "n", ""],
-                    )?;
+                        None,
+                    )
+                    .await?;
                     if answer == "n" {
                         out_writer.serialize(DrawData {
                             glyph: '?',
