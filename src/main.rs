@@ -10,8 +10,8 @@ use std::{
 use anyhow::anyhow;
 use clap::{Parser, ValueEnum};
 use csv::Writer;
-use event::queue_events_as_raw;
-use glyphs::{init_alphabets, println_glyph, retime_eq_spaced, Alphabet};
+use event::{queue_events_as_raw, Ev};
+use glyphs::{glyph_duration, init_alphabets, println_glyph, retime_eq_spaced, Alphabet};
 use rand::{random, rng, seq::SliceRandom};
 use serde::Serialize;
 use serialport::TTYPort;
@@ -22,7 +22,7 @@ mod glyphs;
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 enum Exp {
-    Droupout,
+    Dropout,
     Draw,
     Alphabet,
 }
@@ -58,6 +58,7 @@ struct DrawData {
     glyph: char,
     speed: u16,
     duration_ms: u128,
+    pathiness: u8,
 }
 
 #[derive(Serialize, Debug)]
@@ -79,11 +80,38 @@ fn flush() {
     io::stdout().flush().unwrap_or(())
 }
 
+fn ask<S: AsRef<str>>(question: &str, possible_answers: &[S]) -> anyhow::Result<String> {
+    let mut answer = String::new();
+    loop {
+        print!("{}", question);
+        flush();
+        stdin().read_line(&mut answer)?;
+        let t_answer = answer.trim().to_lowercase();
+        for a in possible_answers {
+            if a.as_ref() == t_answer {
+                return Ok(t_answer.to_owned());
+            }
+        }
+        answer = String::new();
+    }
+}
+
+async fn play_and_wait(tty: &mut TTYPort, glyph: &[Ev]) -> anyhow::Result<()> {
+    queue_events_as_raw(glyph, tty)?;
+    let g_dur = glyph_duration(glyph);
+    if g_dur >= 1000 {
+        sleep(Duration::from_secs_f32(1.0) + Duration::from_millis(g_dur as u64)).await;
+    } else {
+        sleep(Duration::from_secs_f32(2.0)).await;
+    }
+    Ok(())
+}
+
 async fn calibrate_until_enter(tty: &mut TTYPort, a_bet: &Alphabet) -> anyhow::Result<()> {
     let done = Arc::new(RwLock::new(false));
     let done_1 = done.clone();
     tokio::spawn(async move {
-        stdin().read_line(&mut String::new()).unwrap();
+        stdin().read_line(&mut String::new()).unwrap_or(0);
         *done_1.write().await = true;
     });
     let mut i: u8 = 0;
@@ -124,29 +152,26 @@ async fn dropout_problem(
     sleep(Duration::from_secs_f32(1.0)).await;
     println!("Glyph 1...");
     flush();
-    queue_events_as_raw(
-        &retime_eq_spaced(a_bet.get_other_glyph(glyph1), prob.2),
+    play_and_wait(
         tty,
-    )?;
-    sleep(Duration::from_secs_f32(2.0)).await;
+        &retime_eq_spaced(a_bet.get_other_glyph(glyph1), prob.2),
+    )
+    .await?;
     println!("Glyph 2...");
     flush();
-    queue_events_as_raw(
-        &retime_eq_spaced(a_bet.get_other_glyph(glyph2), prob.2),
+    play_and_wait(
         tty,
-    )?;
-    sleep(Duration::from_secs_f32(2.0)).await;
+        &retime_eq_spaced(a_bet.get_other_glyph(glyph2), prob.2),
+    )
+    .await?;
     let start = Instant::now();
-    let mut answer = String::new();
-    while answer.to_lowercase() != "y\n" && answer.to_lowercase() != "n\n" && answer != "?\n" {
-        print!("Did the device play the same pattern twice?\n(type 'y','n' or '?' if you're unsure, then [Enter]): ");
-        flush();
-        answer = String::new();
-        io::stdin().read_line(&mut answer)?;
-    }
+    let answer = ask(
+        "Did the device play the same pattern twice?\n(type 'y','n' or '?' if you're unsure, then [Enter]): ",
+        &["y", "n", "?"]
+    )?;
     let duration = Instant::now().duration_since(start);
-    let unsure = answer == "?\n";
-    let correct = ((answer == "y\n") ^ play_dropout) && !unsure;
+    let unsure = answer == "?";
+    let correct = ((answer == "y") ^ play_dropout) && !unsure;
     Ok(DropoutData {
         id: prob_id,
         glyph: prob.0.to_owned(),
@@ -165,6 +190,7 @@ async fn dropout_exp(
     a_bet: &Alphabet,
 ) -> anyhow::Result<()> {
     clear_term();
+    // TODO change this text
     println!(
         "In this experiment, for each question, the Tactom device will play two \
 glyphs (glyph 1 then glyph 2), with a short pause in-between.
@@ -182,7 +208,49 @@ Example glyphs:"
     flush();
     calibrate_until_enter(&mut tty, a_bet).await?;
 
-    let mut problems: Vec<(usize, (&str, &str))> = [].into_iter().enumerate().collect(); // TODO make these
+    // TODO add the rest of these
+    let prob_pairs = vec![
+        ("col0_up", "col0_up_dropout0"),
+        ("col0_up", "col0_up_dropout1"),
+        ("col2_down", "col2_down_dropout0"),
+        ("col2_down", "col2_down_dropout1"),
+        ("row0_left", "row0_left_dropout0"),
+        ("row0_left", "row0_left_dropout1"),
+        ("row0_left", "row0_left_dropout2"),
+        ("row0_left", "row0_left_dropout3"),
+        ("row0_left", "row0_left_dropout4"),
+        ("row1_right", "row1_right_dropout0"),
+        ("row1_right", "row1_right_dropout1"),
+        ("row1_right", "row1_right_dropout2"),
+        ("row1_right", "row1_right_dropout3"),
+        ("row1_right", "row1_right_dropout4"),
+        ("row2_right", "row2_right_dropout0"),
+        ("row2_right", "row2_right_dropout1"),
+        ("row2_right", "row2_right_dropout2"),
+        ("row2_right", "row2_right_dropout3"),
+        ("row2_right", "row2_right_dropout4"),
+        ("clockwise", "clockwise_dropout0"),
+        ("clockwise", "clockwise_dropout1"),
+        ("clockwise", "clockwise_dropout2"),
+        ("clockwise", "clockwise_dropout3"),
+        ("clockwise", "clockwise_dropout4"),
+        ("anticlockwise", "anticlockwise_dropout0"),
+        ("anticlockwise", "anticlockwise_dropout1"),
+        ("anticlockwise", "anticlockwise_dropout2"),
+        ("anticlockwise", "anticlockwise_dropout3"),
+        ("anticlockwise", "anticlockwise_dropout4"),
+    ];
+    let prob_len = prob_pairs.len();
+    let speeds = iter::repeat(50)
+        .take(prob_len)
+        .chain(iter::repeat(150).take(prob_len));
+    let mut problems: Vec<(usize, (&str, &str, u16))> = prob_pairs
+        .into_iter()
+        .cycle()
+        .zip(speeds)
+        .map(|((p1, p2), p3)| (p1, p2, p3))
+        .enumerate()
+        .collect();
     problems.shuffle(&mut rng());
     let q_len = problems.len();
     for (q, (p_id, prob)) in problems.into_iter().enumerate() {
@@ -190,31 +258,17 @@ Example glyphs:"
             clear_term();
             match dropout_problem(&mut tty, a_bet, prob, q, q_len, p_id).await {
                 Ok(data) => {
-                    // ----- WARN dbg
-                    println!(
-                        "{}",
-                        if data.correct {
-                            "dbg: Correct!"
-                        } else {
-                            "dbg: Wrong"
-                        }
-                    );
-                    sleep(Duration::from_millis(500)).await;
-                    // -----
                     out_writer.serialize(data)?;
                     out_writer.flush()?;
                     break;
                 }
                 Err(e) => {
                     println!("An error has occured on problem {}, {}", p_id, e);
-                    let mut answer = String::new();
-                    while answer.to_lowercase() != "y\n" && answer.to_lowercase() != "n\n" {
-                        print!("Would you like to retry this problem (otherwise, skip it)?[Y/n]: ");
-                        flush();
-                        answer = String::new();
-                        io::stdin().read_line(&mut answer)?;
-                    }
-                    if answer.to_lowercase() == "n\n" {
+                    let answer = ask(
+                        "Would you like to retry this problem (otherwise, skip it)?[Y/n]: ",
+                        &["y", "n", ""],
+                    )?;
+                    if answer == "n" {
                         out_writer.serialize(DropoutData {
                             id: p_id,
                             glyph: "error".to_owned(),
@@ -247,22 +301,16 @@ async fn alphabet_problem(
     sleep(Duration::from_secs_f32(1.0)).await;
     println!("Playing glyph...");
     flush();
-    queue_events_as_raw(&retime_eq_spaced(a_bet.get_glyph(prob.0), prob.1), tty)?;
-    sleep(Duration::from_secs_f32(2.0)).await;
+    play_and_wait(tty, &retime_eq_spaced(a_bet.get_glyph(prob.0), prob.1)).await?;
     let start = Instant::now();
-    let mut answer = String::new();
-    while answer
-        .chars()
-        .nth(0)
-        .map(|c| c < 'a' || c > 'z')
-        .unwrap_or(true)
-        && answer.len() != 2
-    {
-        print!("What letter just played?\n(type 'a', 'b', 'c', ..., 'z' or '?' if you're unsure, then [Enter]): ");
-        flush();
-        answer = String::new();
-        io::stdin().read_line(&mut answer)?;
-    }
+    let options: Vec<String> = ('a'..='z')
+        .chain(iter::once('?'))
+        .map(|c| c.to_string())
+        .collect();
+    let answer = ask(
+        "What letter just played?\n(type 'a', 'b', 'c', ..., 'z' or '?' if you're unsure, then [Enter]): ",
+        &options
+    )?;
     let duration = Instant::now().duration_since(start);
     let answer = answer.chars().nth(0).unwrap();
     let unsure = answer == '?';
@@ -273,6 +321,7 @@ async fn alphabet_problem(
         println!("\nIncorrect, answer: '{}'", prob.0);
     }
     print!("Press [Enter] to continue: ");
+    flush();
     io::stdin().read_line(&mut String::new())?;
     Ok(AlphabetData {
         c: prob.0,
@@ -307,20 +356,18 @@ Press [Enter] when you're ready to begin:"
         flush();
         sleep(Duration::from_secs_f32(1.0)).await;
         let mut answer = String::new();
-        while answer.to_lowercase() != "n\n" {
+        while answer != "n" {
             println!("Playing...");
-            queue_events_as_raw(&retime_eq_spaced(a_bet.get_glyph(c), 150), &mut tty)?;
             flush();
-            sleep(Duration::from_secs_f32(2.0)).await;
+            play_and_wait(&mut tty, &retime_eq_spaced(a_bet.get_glyph(c), 150)).await?;
             println!("Playing fast...");
-            queue_events_as_raw(&retime_eq_spaced(a_bet.get_glyph(c), 30), &mut tty)?;
             flush();
-            sleep(Duration::from_secs_f32(1.0)).await;
-            print!("Would you like to replay this glyph (otherwise, advance to the next letter)?[Y/n]: ");
-            flush();
-            answer = String::new();
-            io::stdin().read_line(&mut answer)?;
-            if answer == "skip\n" {
+            play_and_wait(&mut tty, &retime_eq_spaced(a_bet.get_glyph(c), 30)).await?;
+            answer = ask(
+                "Would you like to replay this glyph (otherwise, advance to the next letter)?[Y/n]: ",
+                &["y", "n", "skip", ""]
+            )?;
+            if answer == "skip" {
                 break 'learn;
             }
         }
@@ -357,14 +404,11 @@ Press [Enter] when you're ready to begin:"
                 }
                 Err(e) => {
                     println!("An error has occured on problem {}, {}", prob.0, e);
-                    let mut answer = String::new();
-                    while answer != "1\n" && answer != "2\n" {
-                        print!("Would you like to retry this problem (otherwise, skip it)?[Y/n]: ");
-                        flush();
-                        answer = String::new();
-                        io::stdin().read_line(&mut answer)?;
-                    }
-                    if answer.to_lowercase() == "n\n" {
+                    let answer = ask(
+                        "Would you like to retry this problem (otherwise, skip it)?[Y/n]: ",
+                        &["y", "n", ""],
+                    )?;
+                    if answer == "n" {
                         out_writer.serialize(AlphabetData {
                             c: '%',
                             speed: 0,
@@ -395,17 +439,18 @@ async fn draw_problem(
     sleep(Duration::from_secs_f32(1.0)).await;
     println!("Playing glyph...");
     flush();
-    queue_events_as_raw(&retime_eq_spaced(a_bet.get_glyph(prob.0), prob.1), tty)?;
-    sleep(Duration::from_secs_f32(2.0)).await;
+    play_and_wait(tty, &retime_eq_spaced(a_bet.get_glyph(prob.0), prob.1)).await?;
     let start = Instant::now();
-    print!("Please draw the glyph you just felt, then press [Enter]): ");
-    flush();
-    io::stdin().read_line(&mut String::new())?;
+    let answer = ask(
+        "Please draw the glyph you just felt, then rate how \"pathy\" felt it was from 1 to 5.\n(type '1', '2', '3', '4' or '5', then [Enter]): ",
+        &["1", "2", "3", "4", "5"],
+    )?;
     let duration = Instant::now().duration_since(start);
     Ok(DrawData {
         glyph: prob.0,
         speed: prob.1,
         duration_ms: duration.as_millis(),
+        pathiness: answer.parse()?,
     })
 }
 
@@ -416,7 +461,9 @@ async fn draw_exp(
 ) -> anyhow::Result<()> {
     clear_term();
     print!(
-"In this experiment, for each question, the device will vibrate the motors in a \"path\", and you will be asked to draw this path with a pencil and paper.
+"In this experiment, for each question, the device will vibrate the motors in a \"path\".
+
+You will be asked to draw this path with a pencil and paper, and type a rating out of 5 of how \"pathy\" the pattern feels.
 
 Press [Enter] when you're ready to begin:"
     );
@@ -437,37 +484,6 @@ Press [Enter] when you're ready to begin:"
     let mut problems: Vec<(char, u16)> = chars.zip(speeds).collect();
     problems.shuffle(&mut rng());
 
-    // // TODO decide these
-    // let mut problems: Vec<(usize, &str)> = [
-    //     "col0_up",
-    //     "col1_up",
-    //     "col2_up",
-    //     "col3_up",
-    //     "col0_down",
-    //     "col1_down",
-    //     "col2_down",
-    //     "col3_down",
-    //     "row0_right",
-    //     "row1_right",
-    //     "row2_right",
-    //     "row0_left",
-    //     "row1_left",
-    //     "row2_left",
-    //     "clockwise",
-    //     "anticlockwise",
-    //     "slash",
-    //     "rev_slash",
-    //     "backslash",
-    //     "rev_backslash",
-    //     "N",
-    //     "flipped_N",
-    //     "zig",
-    //     "zag",
-    // ]
-    // .into_iter()
-    // .enumerate()
-    // .collect();
-    // problems.shuffle(&mut rng());
     let q_len = problems.len();
     for (q, prob) in problems.into_iter().enumerate() {
         loop {
@@ -480,18 +496,16 @@ Press [Enter] when you're ready to begin:"
                 }
                 Err(e) => {
                     println!("An error has occured on problem {}, {}", q, e);
-                    let mut answer = String::new();
-                    while answer.to_lowercase() != "y\n" && answer.to_lowercase() != "n\n" {
-                        print!("Would you like to retry this problem (otherwise, skip it)?[Y/n]: ");
-                        flush();
-                        answer = String::new();
-                        io::stdin().read_line(&mut answer)?;
-                    }
-                    if answer.to_lowercase() == "n\n" {
+                    let answer = ask(
+                        "Would you like to retry this problem (otherwise, skip it)?[Y/n]: ",
+                        &["y", "n", ""],
+                    )?;
+                    if answer == "n" {
                         out_writer.serialize(DrawData {
                             glyph: '?',
                             speed: 0,
                             duration_ms: 0,
+                            pathiness: 0,
                         })?;
                         break;
                     }
@@ -517,7 +531,7 @@ async fn main() -> anyhow::Result<()> {
     let alphabets = init_alphabets();
 
     match cli.exp {
-        Exp::Droupout => dropout_exp(out_writer, tty, alphabets.get("distinguish").unwrap()).await,
+        Exp::Dropout => dropout_exp(out_writer, tty, alphabets.get("distinguish").unwrap()).await,
         Exp::Alphabet => alphabet_exp(out_writer, tty, alphabets.get("roud_graff").unwrap()).await,
         Exp::Draw => draw_exp(out_writer, tty, alphabets.get("roud_graff").unwrap()).await,
     }?;

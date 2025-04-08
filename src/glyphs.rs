@@ -239,6 +239,70 @@ pub fn init_alphabets() -> HashMap<String, Alphabet> {
             ]),
         ),
     ]);
+    distinguish.add_other_glyphs(vec![
+        ("col0_up_dropout0", equal_spaced_evs(&[8, 8, 0], 30)),
+        ("col0_up_dropout1", equal_spaced_evs(&[8, 0, 0], 30)),
+        ("col2_down_dropout0", equal_spaced_evs(&[2, 2, 10], 30)),
+        ("col2_down_dropout1", equal_spaced_evs(&[2, 10, 10], 30)),
+        ("row0_left_dropout0", equal_spaced_evs(&[3, 3, 1, 0], 30)),
+        ("row0_left_dropout1", equal_spaced_evs(&[3, 2, 2, 0], 30)),
+        ("row0_left_dropout2", equal_spaced_evs(&[3, 1, 1, 0], 30)),
+        ("row0_left_dropout3", equal_spaced_evs(&[3, 2, 0, 0], 30)),
+        ("row0_left_dropout4", equal_spaced_evs(&[3, 3, 0, 0], 30)),
+        ("row1_right_dropout0", equal_spaced_evs(&[4, 4, 6, 7], 30)),
+        ("row1_right_dropout1", equal_spaced_evs(&[4, 5, 5, 7], 30)),
+        ("row1_right_dropout2", equal_spaced_evs(&[4, 6, 6, 7], 30)),
+        ("row1_right_dropout3", equal_spaced_evs(&[4, 5, 7, 7], 30)),
+        ("row1_right_dropout4", equal_spaced_evs(&[4, 4, 7, 7], 30)),
+        ("row2_right_dropout0", equal_spaced_evs(&[8, 8, 10, 11], 30)),
+        ("row2_right_dropout1", equal_spaced_evs(&[8, 9, 9, 11], 30)),
+        (
+            "row2_right_dropout2",
+            equal_spaced_evs(&[8, 10, 10, 11], 30),
+        ),
+        ("row2_right_dropout3", equal_spaced_evs(&[8, 9, 11, 11], 30)),
+        ("row2_right_dropout4", equal_spaced_evs(&[8, 8, 11, 11], 30)),
+        (
+            "clockwise_dropout0",
+            equal_spaced_evs(&[0, 1, 1, 3, 7, 11, 10, 9, 8, 4, 0], 30),
+        ),
+        (
+            "clockwise_dropout1",
+            equal_spaced_evs(&[0, 1, 2, 3, 3, 11, 10, 9, 8, 4, 0], 30),
+        ),
+        (
+            "clockwise_dropout2",
+            equal_spaced_evs(&[0, 1, 2, 3, 7, 11, 11, 9, 8, 4, 0], 30),
+        ),
+        (
+            "clockwise_dropout3",
+            equal_spaced_evs(&[0, 1, 2, 3, 7, 11, 10, 9, 9, 4, 0], 30),
+        ),
+        (
+            "clockwise_dropout4",
+            equal_spaced_evs(&[0, 1, 2, 3, 7, 11, 10, 9, 8, 0, 0], 30),
+        ),
+        (
+            "anticlockwise_dropout0",
+            equal_spaced_evs(&[0, 4, 8, 8, 10, 11, 7, 3, 2, 1, 0], 30),
+        ),
+        (
+            "anticlockwise_dropout1",
+            equal_spaced_evs(&[0, 4, 8, 9, 10, 10, 7, 3, 2, 1, 0], 30),
+        ),
+        (
+            "anticlockwise_dropout2",
+            equal_spaced_evs(&[0, 4, 8, 9, 10, 11, 3, 3, 2, 1, 0], 30),
+        ),
+        (
+            "anticlockwise_dropout3",
+            equal_spaced_evs(&[0, 4, 8, 9, 10, 11, 7, 3, 2, 2, 0], 30),
+        ),
+        (
+            "anticlockwise_dropout4",
+            equal_spaced_evs(&[0, 0, 8, 9, 10, 11, 7, 3, 2, 1, 0], 30),
+        ),
+    ]);
     map.insert("distinguish".to_owned(), distinguish);
 
     let mut roud_graff = Alphabet::default(); // short for "Roudaut graffiti"

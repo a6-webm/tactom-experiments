@@ -32,7 +32,7 @@ pub enum EvType {
     EndGlyph, // Denote the end of a glyph
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Ev {
     pub ms_time: u16,
     pub ev_type: u8,
