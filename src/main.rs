@@ -279,6 +279,7 @@ Example glyphs:"
                             correct: false,
                             unsure: false,
                         })?;
+                        out_writer.flush()?;
                         break;
                     }
                 }
@@ -400,6 +401,7 @@ Press [Enter] when you're ready to begin:"
                 Ok(data) => {
                     occurrences[prob.0 as usize - 'a' as usize] += 1;
                     out_writer.serialize(data)?;
+                    out_writer.flush()?;
                     break;
                 }
                 Err(e) => {
@@ -418,6 +420,7 @@ Press [Enter] when you're ready to begin:"
                             correct: false,
                             unsure: false,
                         })?;
+                        out_writer.flush()?;
                         break;
                     }
                 }
@@ -507,6 +510,7 @@ Press [Enter] when you're ready to begin:"
                             duration_ms: 0,
                             pathiness: 0,
                         })?;
+                        out_writer.flush()?;
                         break;
                     }
                 }
