@@ -190,25 +190,16 @@ async fn dropout_exp(
     a_bet: &Alphabet,
 ) -> anyhow::Result<()> {
     clear_term();
-    // TODO change this text
     println!(
-        "In this experiment, for each question, the Tactom device will play two \
-glyphs (glyph 1 then glyph 2), with a short pause in-between.
-You will then be shown a picture of one of the glyphs, and will need to answer \
-if glyph 1 or 2 is pictured.
+        "In this experiment, two patterns will be played one after the other on the device.
 
-Example glyphs:"
+You will then be asked if these two patterns were identical or subtly different.
+
+Press [Enter] when you're ready to begin:"
     );
-    println!("Clockwise swipe:");
-    println_glyph(a_bet.get_other_glyph("clockwise"));
-    println!("\nLeftwards swipe on the 2nd row");
-    println_glyph(a_bet.get_other_glyph("row1_left"));
-    println!();
-    print!("Press [Enter] when you're ready to begin:");
     flush();
     calibrate_until_enter(&mut tty, a_bet).await?;
 
-    // TODO add the rest of these
     let prob_pairs = vec![
         ("col0_up", "col0_up_dropout0"),
         ("col0_up", "col0_up_dropout1"),
