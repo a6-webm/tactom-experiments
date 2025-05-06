@@ -514,16 +514,12 @@ Press [Enter] when you're ready to begin:"
     calibrate_until_enter(&mut tty, a_bet).await?;
 
     let abet_len = 'z' as usize - 'a' as usize + 1;
-    let speeds = iter::repeat(30)
+    let speeds = iter::repeat(50)
         .take(abet_len / 2)
-        .chain(iter::repeat(50).take(abet_len / 2))
-        .chain(iter::repeat(70).take(abet_len / 2))
-        .chain(iter::repeat(100).take(abet_len / 2))
-        .chain(iter::repeat(150).take(abet_len / 2))
-        .chain(iter::repeat(250).take(abet_len / 2));
+        .chain(iter::repeat(150).take(abet_len / 2));
     let mut abet_chars: Vec<char> = ('a'..='z').collect();
     abet_chars.shuffle(&mut rng());
-    let chars = abet_chars.into_iter().cycle().take(abet_len * 3);
+    let chars = abet_chars.into_iter().cycle().take(abet_len * 1);
     let mut problems: Vec<(char, u16)> = chars.zip(speeds).collect();
     problems.shuffle(&mut rng());
 
